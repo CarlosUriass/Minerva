@@ -8,7 +8,7 @@ import com.minerva.core.primitives.Vector;
  * This interface provides methods for vector arithmetic, dot products,
  * scaling, and norm calculations.
  */
-public interface VectorOps {
+public interface IVectorOps {
 
     /**
      * Computes the dot product (inner product) of this vector with another.

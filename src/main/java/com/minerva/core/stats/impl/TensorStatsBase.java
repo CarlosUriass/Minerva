@@ -1,17 +1,17 @@
 package com.minerva.core.stats.impl;
 
-import com.minerva.core.api.Tensor;
-import com.minerva.core.stats.api.TensorStats;
+import com.minerva.core.api.ITensor;
+import com.minerva.core.stats.api.ITensorStats;
 
 /**
  * Abstract base class providing common statistical implementations.
  * Subclasses can override for optimized implementations.
  */
-public abstract class TensorStatsBase implements TensorStats {
+public abstract class TensorStatsBase implements ITensorStats {
 
-    protected final Tensor tensor;
+    protected final ITensor tensor;
 
-    protected TensorStatsBase(Tensor tensor) {
+    protected TensorStatsBase(ITensor tensor) {
         this.tensor = tensor;
     }
 

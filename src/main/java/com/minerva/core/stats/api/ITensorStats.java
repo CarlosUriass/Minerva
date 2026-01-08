@@ -4,7 +4,7 @@ package com.minerva.core.stats.api;
  * Generic interface for statistical operations on tensor-like structures.
  * This interface can be implemented for any Tensor (Vector, Matrix, etc.)
  */
-public interface TensorStats {
+public interface ITensorStats {
 
     /**
      * Computes the arithmetic average.

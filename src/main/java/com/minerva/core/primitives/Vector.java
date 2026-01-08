@@ -1,7 +1,7 @@
 package com.minerva.core.primitives;
 
-import com.minerva.core.api.Tensor;
-import com.minerva.core.api.VectorOps;
+import com.minerva.core.api.ITensor;
+import com.minerva.core.api.IVectorOps;
 import com.minerva.core.stats.impl.VectorStats;
 
 import java.util.Arrays;
@@ -11,7 +11,7 @@ import java.util.Arrays;
  * Represents a mathematical vector with support for common linear algebra
  * operations.
  */
-public class Vector implements Tensor, VectorOps {
+public class Vector implements ITensor, IVectorOps {
 
     // Package-private for VectorAccess (friend-like pattern)
     final double[] data;

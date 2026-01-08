@@ -4,7 +4,7 @@ package com.minerva.core.api;
  * Base interface for all tensor-like structures.
  * Provides common operations for n-dimensional numerical data.
  */
-public interface Tensor {
+public interface ITensor {
 
     /**
      * Returns the shape of the tensor as an array of dimensions.

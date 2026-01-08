@@ -6,7 +6,7 @@ import com.minerva.core.primitives.Vector;
 /**
  * Interface defining matrix-specific operations.
  */
-public interface MatrixOps {
+public interface IMatrixOps {
 
     /**
      * Multiplies this matrix with another matrix.

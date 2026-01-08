@@ -1,7 +1,7 @@
 package com.minerva.core.primitives;
 
-import com.minerva.core.api.Tensor;
-import com.minerva.core.api.MatrixOps;
+import com.minerva.core.api.ITensor;
+import com.minerva.core.api.IMatrixOps;
 import com.minerva.core.stats.impl.MatrixStats;
 
 /**
@@ -11,7 +11,7 @@ import com.minerva.core.stats.impl.MatrixStats;
  *
  * Internal storage is row-major and contiguous for performance.
  */
-public class Matrix implements Tensor, MatrixOps {
+public class Matrix implements ITensor, IMatrixOps {
 
     // Package-private for friend-like access (MatrixAccess, stats, ops)
     final int rows;
