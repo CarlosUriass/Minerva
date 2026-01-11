@@ -2,6 +2,11 @@ package com.minerva.core.primitives;
 
 import com.minerva.core.api.ITensor;
 import com.minerva.core.api.IMatrixOps;
+import com.minerva.core.linalg.CholeskyFactorization;
+import com.minerva.core.linalg.IFactorization;
+import com.minerva.core.linalg.InversionMethod;
+import com.minerva.core.linalg.LUFactorization;
+import com.minerva.core.linalg.QRFactorization;
 import com.minerva.core.stats.impl.MatrixStats;
 
 /**
@@ -254,6 +259,101 @@ public class Matrix implements ITensor, IMatrixOps {
         return new Matrix(rows, rows, data);
     }
 
+    // ==================== Linear Algebra ====================
+
+    /**
+     * Computes the inverse of this matrix using LU decomposition.
+     *
+     * <p>
+     * <strong>Note:</strong> Prefer {@link #solve(Vector)} when possible.
+     * Computing the inverse is slower and less stable.
+     *
+     * @return the inverse matrix A⁻¹
+     * @throws IllegalArgumentException                           if matrix is not
+     *                                                            square
+     * @throws com.minerva.core.exception.SingularMatrixException if matrix is
+     *                                                            singular
+     */
+    public Matrix inv() {
+        return inv(InversionMethod.LU);
+    }
+
+    /**
+     * Computes the inverse using the specified decomposition algorithm.
+     *
+     * @param method the decomposition algorithm to use
+     * @return the inverse matrix A⁻¹
+     * @throws IllegalArgumentException                                if matrix is
+     *                                                                 not square
+     * @throws com.minerva.core.exception.SingularMatrixException      if matrix is
+     *                                                                 singular
+     * @throws com.minerva.core.exception.NonPositiveDefiniteException if CHOLESKY
+     *                                                                 and matrix
+     *                                                                 not SPD
+     */
+    public Matrix inv(InversionMethod method) {
+        requireSquare();
+        return factorize(method).inverse();
+    }
+
+    /**
+     * Solves the linear system Ax = b using LU decomposition.
+     *
+     * @param b the right-hand side vector
+     * @return the solution vector x
+     */
+    public Vector solve(Vector b) {
+        return solve(b, InversionMethod.LU);
+    }
+
+    /**
+     * Solves the linear system Ax = b using the specified algorithm.
+     *
+     * @param b      the right-hand side vector
+     * @param method the decomposition algorithm to use
+     * @return the solution vector x
+     */
+    public Vector solve(Vector b, InversionMethod method) {
+        requireSquare();
+        return factorize(method).solve(b);
+    }
+
+    /**
+     * Solves the linear system AX = B for multiple right-hand sides.
+     *
+     * @param B the right-hand side matrix
+     * @return the solution matrix X
+     */
+    public Matrix solve(Matrix B) {
+        return solve(B, InversionMethod.LU);
+    }
+
+    /**
+     * Solves the linear system AX = B using the specified algorithm.
+     *
+     * @param B      the right-hand side matrix
+     * @param method the decomposition algorithm to use
+     * @return the solution matrix X
+     */
+    public Matrix solve(Matrix B, InversionMethod method) {
+        requireSquare();
+        return factorize(method).solve(B);
+    }
+
+    private IFactorization factorize(InversionMethod method) {
+        return switch (method) {
+            case LU -> new LUFactorization(this);
+            case CHOLESKY -> new CholeskyFactorization(this);
+            case QR -> new QRFactorization(this);
+        };
+    }
+
+    private void requireSquare() {
+        if (rows != cols) {
+            throw new IllegalArgumentException("Matrix must be square: " + rows + "x" + cols);
+        }
+    }
+
     // ==================== Statistics API ====================
 
     public MatrixStats stats() {
@@ -269,13 +369,22 @@ public class Matrix implements ITensor, IMatrixOps {
         StringBuilder sb = new StringBuilder();
 
         for (int r = 0; r < rows; r++) {
-            sb.append("[ ");
+            sb.append("[");
             for (int c = 0; c < cols; c++) {
-                sb.append(String.format("%8.4f", data[r * cols + c]));
+                double val = data[r * cols + c];
+                // Round to avoid floating point noise, then format cleanly
+                double rounded = Math.round(val * 10000.0) / 10000.0;
+                if (rounded == (long) rounded) {
+                    sb.append((long) rounded);
+                } else {
+                    // Remove trailing zeros
+                    String formatted = String.format("%.4f", rounded).replaceAll("0+$", "").replaceAll("\\.$", "");
+                    sb.append(formatted);
+                }
                 if (c < cols - 1)
                     sb.append(", ");
             }
-            sb.append(" ]\n");
+            sb.append("]\n");
         }
         return sb.toString();
     }
