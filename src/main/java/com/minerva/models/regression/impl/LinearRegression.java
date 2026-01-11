@@ -1,5 +1,6 @@
 package com.minerva.models.regression.impl;
 
+import com.minerva.core.linalg.QRFactorization;
 import com.minerva.core.primitives.Matrix;
 import com.minerva.core.primitives.MatrixAccess;
 import com.minerva.core.primitives.Vector;
@@ -7,15 +8,19 @@ import com.minerva.core.primitives.VectorAccess;
 import com.minerva.models.regression.api.IRegressionModel;
 
 /**
- * Ordinary Least Squares Linear Regression using QR Decomposition
- * (Modified Gram-Schmidt).
+ * Ordinary Least Squares Linear Regression using QR Decomposition.
  *
+ * <p>
  * Solves:
+ * 
+ * <pre>
  *   min ||X w - y||²
+ * </pre>
  *
- * with implicit intercept.
+ * with implicit intercept (bias term).
  *
- * Numerically stable, cache-friendly, and dimension-safe.
+ * <p>
+ * Uses {@link QRFactorization} for numerical stability.
  */
 public final class LinearRegression implements IRegressionModel {
 
@@ -33,75 +38,21 @@ public final class LinearRegression implements IRegressionModel {
             throw new IllegalArgumentException("X rows must match y length");
         }
 
-        // Raw data
-        final double[] xRaw = MatrixAccess.raw(X);
-        final double[] yRaw = VectorAccess.raw(y);
-
         // Build augmented design matrix X̃ = [1 | X]
-        double[][] Q = new double[n][k];
+        double[][] augmented = new double[n][k];
+        double[] xRaw = MatrixAccess.raw(X);
+
         for (int i = 0; i < n; i++) {
-            Q[i][0] = 1.0; // intercept
-            System.arraycopy(xRaw, i * p, Q[i], 1, p);
+            augmented[i][0] = 1.0; // intercept column
+            System.arraycopy(xRaw, i * p, augmented[i], 1, p);
         }
 
-        // R upper triangular
-        double[][] R = new double[k][k];
+        Matrix XAug = new Matrix(augmented);
 
-        // Modified Gram–Schmidt QR
-        for (int j = 0; j < k; j++) {
-
-            // Compute norm
-            double norm = 0.0;
-            for (int i = 0; i < n; i++) {
-                norm += Q[i][j] * Q[i][j];
-            }
-            norm = Math.sqrt(norm);
-
-            if (norm < 1e-12) {
-                throw new ArithmeticException("Rank deficient matrix");
-            }
-
-            R[j][j] = norm;
-
-            // Normalize column
-            for (int i = 0; i < n; i++) {
-                Q[i][j] /= norm;
-            }
-
-            // Orthogonalize remaining columns
-            for (int l = j + 1; l < k; l++) {
-                double dot = 0.0;
-                for (int i = 0; i < n; i++) {
-                    dot += Q[i][j] * Q[i][l];
-                }
-                R[j][l] = dot;
-                for (int i = 0; i < n; i++) {
-                    Q[i][l] -= dot * Q[i][j];
-                }
-            }
-        }
-
-        // Compute Qᵀy
-        double[] qty = new double[k];
-        for (int j = 0; j < k; j++) {
-            double sum = 0.0;
-            for (int i = 0; i < n; i++) {
-                sum += Q[i][j] * yRaw[i];
-            }
-            qty[j] = sum;
-        }
-
-        // Back substitution: R w = Qᵀ y
-        double[] w = new double[k];
-        for (int i = k - 1; i >= 0; i--) {
-            double sum = qty[i];
-            for (int j = i + 1; j < k; j++) {
-                sum -= R[i][j] * w[j];
-            }
-            w[i] = sum / R[i][i];
-        }
-
-        this.weights = new Vector(w);
+        // Solve X̃ᵀX̃ w = X̃ᵀy using QR decomposition on X̃
+        // QR handles this directly via least squares
+        QRFactorization qr = new QRFactorization(XAug);
+        this.weights = qr.solve(y);
         this.fitted = true;
     }
 
@@ -130,6 +81,9 @@ public final class LinearRegression implements IRegressionModel {
         return new Vector(yPred);
     }
 
+    /**
+     * Returns all weights including intercept: [intercept, w1, w2, ...]
+     */
     public Vector getWeights() {
         if (!fitted) {
             throw new IllegalStateException("Not fitted");
@@ -137,10 +91,16 @@ public final class LinearRegression implements IRegressionModel {
         return weights;
     }
 
+    /**
+     * Returns the intercept (bias) term.
+     */
     public double getIntercept() {
         return getWeights().get(0);
     }
 
+    /**
+     * Returns coefficients without intercept: [w1, w2, ...]
+     */
     public Vector getCoefficients() {
         Vector w = getWeights();
         double[] c = new double[w.size() - 1];
