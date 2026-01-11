@@ -237,11 +237,46 @@ public class Matrix implements ITensor, IMatrixOps {
         }
     }
 
+    /**
+     * Creates an identity matrix of the specified size.
+     * The identity matrix has 1s on the diagonal and 0s elsewhere.
+     *
+     * @param rows the number of rows (and columns) for the square matrix
+     * @return a new identity matrix
+     */
+    public static Matrix identity(int rows) {
+        double[] data = new double[rows * rows];
+
+        for (int i = 0; i < rows; i++) {
+            data[i * (rows + 1)] = 1.0;
+        }
+
+        return new Matrix(rows, rows, data);
+    }
+
     // ==================== Statistics API ====================
 
     public MatrixStats stats() {
         if (stats == null)
             stats = new MatrixStats(this);
         return stats;
+    }
+
+    // ==================== Object Methods ====================
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (int r = 0; r < rows; r++) {
+            sb.append("[ ");
+            for (int c = 0; c < cols; c++) {
+                sb.append(String.format("%8.4f", data[r * cols + c]));
+                if (c < cols - 1)
+                    sb.append(", ");
+            }
+            sb.append(" ]\n");
+        }
+        return sb.toString();
     }
 }
